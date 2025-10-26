@@ -1,7 +1,7 @@
 #import typer
 import cmd
 import sys, os
-import datetime, time
+import datetime, time, csv
 from tabulate import tabulate
 #app = typer.Typer()
 
@@ -10,15 +10,12 @@ def cls():
 
 
 class Memory():
-    appdata_path = os.getenv('LOCALAPPDATA')
-    save_path = r'C:\Users\norbe\AppData\Roaming\Nomad Games\Talisman\saved_game'
+    appdata_path = os.getenv('APPDATA')
+    memory_path = r'C:\Users\norbe\AppData\Roaming\Nomad Games\Talisman\saved_game'
+    #memory_path = ''
 
     # [Save Name, [Players], Last Played Date, path]
-    save_list = [
-        ['Save_name', 3, 'players', 'last_played'],
-        ['Save_name', 3, 'players', 'last_played'],
-        ['Save_name', 3, 'players', 'last_played'],
-    ]
+    save_list = []
 
     save_list_headers = [
                             'id',
@@ -31,13 +28,28 @@ class Memory():
     last_action = ''
 
     def load_memory(self):
-        self.appdata_path = ''
-        self.save_list = ''
+        self.save_path = os.path.join(self.appdata_path, 'Nomad Games', 'Talisman', 'saved_game')
+        self.memory_path = os.path.join(self.appdata_path, 'Nomad Games', 'Talisman')
+        rows = []
+        try:
+            with open(os.path.join(self.memory_path, 'save_manager_memory.csv'), mode='r') as f:
+                csv_reader = csv.reader(f, delimiter=';')
+                for row in csv_reader:
+                    self.save_list.append(row)
+            self.update_last_action('Load memory', 'Save list read!')
+        except:
+            self.update_last_action('Load memory', 'No memory file found! File created')
+            with open(os.path.join(self.memory_path, 'save_manager_memory.csv'), mode='w') as f:
+                f.write('')
+
+            
 
     def add(self, save_name, players, date):
+        #TODO copy save file
         self.save_list.append([save_name, len(players), players, date])
 
     def delete(self, id):
+        #TODO delete save file
         del self.save_list[id]
 
     def update_save_path(self):
@@ -116,11 +128,8 @@ class SaveManagerCli(cmd.Cmd):
         return True
 
     def do_start(self, arg):
-        if self.memory.save_path == '':
-            self.memory.update_save_path()
-      
-        if self.memory.save_path != '':
-            self.do_update()
+        self.memory.load_memory()
+        self.do_update()
 
 
 
