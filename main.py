@@ -1,6 +1,6 @@
 #import typer
 import cmd
-import sys, os
+import os
 import datetime, time, csv, shutil
 from tabulate import tabulate
 #app = typer.Typer()
