@@ -42,6 +42,11 @@ class Memory():
             with open(os.path.join(self.memory_path, 'save_manager_memory.csv'), mode='w') as f:
                 f.write('')
 
+    def write_memory(self):
+        with open(os.path.join(self.memory_path, 'save_manager_memory.csv'), mode='w', newline='') as f:
+            csv_writer = csv.writer(f, delimiter=';')
+            #for row in self.save_list:
+            csv_writer.writerows(self.save_list)
             
 
     def add(self, save_name, players, date):
@@ -125,6 +130,7 @@ class SaveManagerCli(cmd.Cmd):
 
     def do_bye(self, arg):
         'Close Talisman Save Manager'
+        self.memory.write_memory()
         return True
 
     def do_start(self, arg):
