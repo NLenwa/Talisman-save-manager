@@ -1,7 +1,7 @@
 #import typer
 import cmd
 import sys, os
-import datetime, time, csv
+import datetime, time, csv, shutil
 from tabulate import tabulate
 #app = typer.Typer()
 
@@ -23,6 +23,7 @@ class Memory():
                             'Player Count',
                             'Player names',
                             'Last Played',
+                            'Save file'
                         ]
     
     last_action = ''
@@ -36,6 +37,14 @@ class Memory():
                 csv_reader = csv.reader(f, delimiter=';')
                 for row in csv_reader:
                     self.save_list.append(row)
+            
+            save_files = os.listdir(os.path.join(self.memory_path, 'Managed Saves'))
+            
+            for save in self.save_list:
+                save_name = save[0]
+                file_name = save[-1]
+                if (save_name+'_'+file_name) not in save_files:
+                    self.save_list.remove(save)
             self.update_last_action('Load memory', 'Save list read!')
         except:
             self.update_last_action('Load memory', 'No memory file found! File created')
@@ -50,11 +59,23 @@ class Memory():
             
 
     def add(self, save_name, players, date):
-        #TODO copy save file
-        self.save_list.append([save_name, len(players), players, date])
+        os.makedirs(os.path.join(self.memory_path, 'Managed Saves'), exist_ok=True)
+        files = os.listdir(self.save_path)
+        file = [x for x in files if 'cloud' in x][0]
+        shutil.copy2(os.path.join(self.save_path, file), os.path.join(self.memory_path, 'Managed Saves', f'{save_name}_'+file))
+        self.save_list.append([save_name, len(players), players, date, file])
+
+    def load_save(self, id):
+        save_name = self.save_list[id][0]
+        file = self.save_list[id][-1]
+        shutil.copy2(os.path.join(self.memory_path, 'Managed Saves', f'{save_name}_'+file), os.path.join(self.save_path, file))
+        
 
     def delete(self, id):
         #TODO delete save file
+        save_name = self.save_list[id][0]
+        file_name = self.save_list[id][-1]
+        os.remove(os.path.join(self.memory_path, 'Managed Saves', save_name+'_'+file_name))
         del self.save_list[id]
 
     def update_save_path(self):
@@ -85,6 +106,8 @@ class SaveManagerCli(cmd.Cmd):
     def do_add(self, arg):
         'Add new save instance to memory'
         save_name, *players = input('Name Save and Players: ').split(' ')
+        if save_name == 'None':
+            return
         #TODO Get file to copy
         #TODO file = 
         #date = time.ctime(os.path.getmtime(file))
@@ -97,6 +120,7 @@ class SaveManagerCli(cmd.Cmd):
         'Remove save instance [id] from memory'
         id = input('Provide save id to DELETE: [integer/None]')
         if id == 'None':
+            self.do_update()
             return
         else:
             try:
@@ -110,6 +134,28 @@ class SaveManagerCli(cmd.Cmd):
                 self.do_update()
                 print(e)
 
+    def do_load(self, arg):
+        'Load save instance. This replaces currently used save file!'
+        id = input('Provide save id to load [<integer>/None]: ')
+        if id == 'None':
+            return
+        else:
+            try:
+                id_int = int(id)
+                save_name = self.memory.save_list[id_int][0]
+                check_input = input('Are you sure? [y/n]: ')
+                if check_input == 'y':
+                    self.memory.update_last_action('Load save', 'Save was loaded!')
+                    self.memory.load_save(id_int)
+                    self.do_update()
+                else:
+                    self.memory.update_last_action('Load save', 'Load was canceled!')
+                    self.do_update()
+                    return
+            except Exception as e:
+                self.memory.update_last_action('Load save', 'Wrong input was given!')
+                self.do_update()
+                print(e)
 
     def do_update(self):
         cls()
