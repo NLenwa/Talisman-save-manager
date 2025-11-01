@@ -3,7 +3,6 @@ import cmd
 import os
 import datetime, time, csv, shutil
 from tabulate import tabulate
-#app = typer.Typer()
 
 def cls():
     os.system('cls' if os.name=='nt' else 'clear')
